@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>ControlButton.qml</file>
+        <file>img/up.svg</file>
+        <file>img/down.svg</file>
+        <file>img/left.svg</file>
+        <file>img/right.svg</file>
+        <file>img/space.svg</file>
+        <file>img/back.svg</file>
+        <file>img/enter.svg</file>
+        <file>img/menu.svg</file>
+        <file>img/stop.svg</file>
+        <file>InfoText.qml</file>
+        <file>InfoInput.qml</file>
+        <file>MessageBox.qml</file>
+    </qresource>
+</RCC>
