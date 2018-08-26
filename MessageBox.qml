@@ -21,8 +21,8 @@ Window {
 
     Rectangle {
         anchors.fill: parent
-        color: Styles.regionBackground
-        border.color: Styles.mainBackground
+        //color: Styles.regionBackground
+        //border.color: Styles.mainBackground
         border.width: 3
 
         ColumnLayout {

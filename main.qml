@@ -9,8 +9,8 @@ Window {
     visible: true
     width: 900
     minimumWidth: 600
-    height: 500
-    minimumHeight: 350
+    height: 600
+    minimumHeight: 550
     title: qsTr("Kodi remote")
     color: "#121212"
 
@@ -27,9 +27,9 @@ Window {
         property alias width: root.width
         property alias height: root.height
 
-        property alias iPort: ti_iPort.text
-        property alias user: ti_user.text
-        property alias password: ti_password.text
+        property alias iPort: ti_iPort.text       // IP and port
+        property alias user: ti_user.text         // username
+        property alias password: ti_password.text // password
     }
 
     Shortcut {
@@ -65,7 +65,7 @@ Window {
         onActivated: btn_menu.clicked()
     }
     Shortcut {
-        sequence: "Ctrl+S"
+        sequence: "Ctrl+X"
         onActivated: btn_stop.clicked()
     }
     Shortcut {
@@ -83,6 +83,64 @@ Window {
             request(
                 prepateRequest("\"Player.Seek\",\"params\":{\"playerid\":1,\"value\":\"smallbackward\"}"),
                 function (o) { processResults(o); }
+            );
+        }
+    }
+    Shortcut {
+        sequence: "Ctrl+S"
+        onActivated: {
+            // get the list of all subtitles
+            request(
+                prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"subtitles\"]}"),
+                function (o)
+                {
+                    var subtitles = processResults(o)["result"]["subtitles"];
+
+                    subsModel.clear();
+                    subsModel.append({
+                        "index": "-1",
+                        "lang": "- no subtitles -"
+                    });
+                    subsCombo.currentIndex = 0;
+                    if (subtitles.length > 0)
+                    {
+                        for(var s in subtitles)
+                        {
+                            var lang = subtitles[s]["language"];
+                            subsModel.append({
+                                "index": subtitles[s]["index"].toString(),
+                                "lang": "[" + (lang.length > 0 ? lang : "unknown") + "] " + subtitles[s]["name"]
+                            });
+                            //console.log(subtitles[s]["index"] + ", " + subtitles[s]["language"] + ", " + subtitles[s]["name"]);
+                        }
+                    }
+
+                    // select the active subtitle
+                    request(
+                        prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"currentsubtitle\"]}"),
+                        function (o)
+                        {
+                            var currentSubtitle = processResults(o)["result"]["currentsubtitle"];
+                            if (currentSubtitle !== null)
+                            {
+                                //console.log("not null");
+                                //console.log(currentSubtitle["index"]);
+                                for (var i = 0; i < subsModel.count; i++)
+                                {
+                                    //console.log(subsModel.get(i).index + " - " + currentSubtitle["index"]);
+                                    if (subsModel.get(i).index === currentSubtitle["index"].toString())
+                                    {
+                                        subsCombo.currentIndex = i;
+                                        break;
+                                    }
+                                }
+
+                            }
+                        }
+                    );
+
+                    subsDialog.open();
+                }
             );
         }
     }
@@ -224,10 +282,11 @@ Window {
                 anchors.margins: 15
                 spacing: 15
 
-                InfoText { text: "<h3>⌘ + S</h3><i>stop playing</i>" }
-                InfoText { text: "<h3>⌘ + I</h3><i>context menu</i>" }
                 InfoText { text: "<h3>⌘ + ←</h3><i>30 seconds backward</i>" }
                 InfoText { text: "<h3>⌘ + →</h3><i>30 seconds forward</i>" }
+                InfoText { text: "<h3>⌘ + X</h3><i>stop playing</i>" }
+                InfoText { text: "<h3>⌘ + I</h3><i>context menu</i>" }
+                InfoText { text: "<h3>⌘ + S</h3><i>subtitles</i>" }
 
                 Item {
                     Layout.fillWidth: true
@@ -260,6 +319,43 @@ Window {
         }
     }
 
+    Item {
+        anchors.centerIn: parent
+        width: subsDialog.width
+        height: subsDialog.height
+
+        Dialog {
+            id: subsDialog
+            width: 300
+            height: 120
+            modal: true
+            title: "Subtitles"
+
+            ComboBox {
+                id: subsCombo
+                textRole: "lang"
+                width: parent.width
+                model: ListModel { id: subsModel }
+                onActivated: {
+                    //console.log(subsModel.get(currentIndex).index);
+                    var params = "{\"playerid\":1,\"subtitle\":"
+                        + subsModel.get(currentIndex).index
+                        + ", \"enable\":true}";
+                    if (subsModel.get(currentIndex).index === "-1")
+                    {
+                        params = "{\"playerid\":1,\"subtitle\":\"off\"}";
+
+                    }
+                    request(
+                        prepateRequest("\"Player.SetSubtitle\",\"params\":" + params),
+                        function (o) { processResults(o); }
+                    );
+                    subsDialog.close();
+                }
+            }
+        }
+    }
+
     MessageBox {
         id: dialogError
         title: "Some error"
@@ -268,6 +364,7 @@ Window {
 
     function request(url, callback)
     {
+        //console.log(decodeURIComponent(url));
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = (function(myxhr) {
             return function() {
@@ -294,12 +391,12 @@ Window {
         if (o.status === 200)
         {
             var jsn = JSON.parse(o.responseText);
-            if (!jsn.hasOwnProperty("error")) { return; }
+            if (!jsn.hasOwnProperty("error")) { return jsn; }
             else
             {
                 dialogError.textMain = "Some error has occurred<br/>Code: "
-                        + jsn["error"]["code"] + "<br/>Error: "
-                        + jsn["error"]["message"];
+                    + jsn["error"]["code"] + "<br/>Error: "
+                    + jsn["error"]["message"];
                 console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
                 dialogError.show();
             }
@@ -307,7 +404,7 @@ Window {
         else
         {
             dialogError.textMain = "Some error has occurred<br/>Code: "
-                    + o.status + "<br/>Status: " + o.statusText;
+                + o.status + "<br/>Status: " + o.statusText;
             console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
             dialogError.show();
         }
