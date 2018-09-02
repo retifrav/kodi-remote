@@ -6,6 +6,7 @@ import QtQuick.Layouts 1.11
 Window {
     id: dialog
 
+    // both title and message text properties are available to be set from "outside"
     property string title
     property string textMain
 

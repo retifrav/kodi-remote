@@ -9,16 +9,21 @@ Button {
     Layout.fillWidth: true
     Layout.fillHeight: true
 
+    // gets bigger a bit when hovered
     scale: hovered ? 1.05 : 1
 
     background: Rectangle {
         color: "transparent"
     }
+
+    // here goes an SVG image
     Image {
         id: img
         anchors.fill: parent
         fillMode: Image.PreserveAspectFit
     }
+
+    // also, when hovered, the button glows a bit
     Glow {
         id: glow
         anchors.fill: img
@@ -26,9 +31,6 @@ Button {
         samples: 30
         color: "#094354"
         source: img
-        visible: false
-    }
-    onHoveredChanged: {
-        hovered ? glow.visible = true : glow.visible = false;
+        visible: parent.hovered
     }
 }

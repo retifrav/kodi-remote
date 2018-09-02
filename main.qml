@@ -89,13 +89,14 @@ Window {
     Shortcut {
         sequence: "Ctrl+S"
         onActivated: {
-            // get the list of all subtitles
+            // get the list of subtitles
             request(
-                prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"subtitles\"]}"),
+                prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"subtitleenabled\",\"currentsubtitle\",\"subtitles\"]}"),
                 function (o)
                 {
-                    var subtitles = processResults(o)["result"]["subtitles"];
+                    var rez = processResults(o)["result"];
 
+                    var subtitles = rez["subtitles"];
                     subsModel.clear();
                     subsModel.append({
                         "index": "-1",
@@ -115,29 +116,27 @@ Window {
                         }
                     }
 
-                    // select the active subtitle
-                    request(
-                        prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"currentsubtitle\"]}"),
-                        function (o)
+                    // if there is an active subtitle
+                    if(rez["subtitleenabled"] === true)
+                    {
+                        // select the active subtitle
+                        var currentSubtitle = rez["currentsubtitle"];
+                        if (currentSubtitle !== null)
                         {
-                            var currentSubtitle = processResults(o)["result"]["currentsubtitle"];
-                            if (currentSubtitle !== null)
+                            //console.log("not null");
+                            //console.log(currentSubtitle["index"]);
+                            for (var i = 0; i < subsModel.count; i++)
                             {
-                                //console.log("not null");
-                                //console.log(currentSubtitle["index"]);
-                                for (var i = 0; i < subsModel.count; i++)
+                                //console.log(subsModel.get(i).index + " - " + currentSubtitle["index"]);
+                                if (subsModel.get(i).index === currentSubtitle["index"].toString())
                                 {
-                                    //console.log(subsModel.get(i).index + " - " + currentSubtitle["index"]);
-                                    if (subsModel.get(i).index === currentSubtitle["index"].toString())
-                                    {
-                                        subsCombo.currentIndex = i;
-                                        break;
-                                    }
+                                    subsCombo.currentIndex = i;
+                                    break;
                                 }
-
                             }
+
                         }
-                    );
+                    }
 
                     subsDialog.open();
                 }
@@ -391,13 +390,14 @@ Window {
         if (o.status === 200)
         {
             var jsn = JSON.parse(o.responseText);
+            // if there was no error, return JSON result
             if (!jsn.hasOwnProperty("error")) { return jsn; }
-            else
+            else // set message text and show the dialog window
             {
                 dialogError.textMain = "Some error has occurred<br/>Code: "
                     + jsn["error"]["code"] + "<br/>Error: "
                     + jsn["error"]["message"];
-                console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
+                //console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
                 dialogError.show();
             }
         }
