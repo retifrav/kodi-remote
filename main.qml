@@ -103,6 +103,7 @@ Window {
                         "lang": "- no subtitles -"
                     });
                     subsCombo.currentIndex = 0;
+                    //console.log(subtitles.length);
                     if (subtitles.length > 0)
                     {
                         for(var s in subtitles)
@@ -114,27 +115,27 @@ Window {
                             });
                             //console.log(subtitles[s]["index"] + ", " + subtitles[s]["language"] + ", " + subtitles[s]["name"]);
                         }
-                    }
 
-                    // if there is an active subtitle
-                    if(rez["subtitleenabled"] === true)
-                    {
-                        // select the active subtitle
-                        var currentSubtitle = rez["currentsubtitle"];
-                        if (currentSubtitle !== null)
+                        // if there is an active subtitle
+                        if(rez["subtitleenabled"] === true)
                         {
-                            //console.log("not null");
-                            //console.log(currentSubtitle["index"]);
-                            for (var i = 0; i < subsModel.count; i++)
+                            // select the active subtitle
+                            var currentSubtitle = rez["currentsubtitle"];
+                            if (currentSubtitle !== null)
                             {
-                                //console.log(subsModel.get(i).index + " - " + currentSubtitle["index"]);
-                                if (subsModel.get(i).index === currentSubtitle["index"].toString())
+                                //console.log("not null");
+                                //console.log(currentSubtitle["index"]);
+                                for (var i = 0; i < subsModel.count; i++)
                                 {
-                                    subsCombo.currentIndex = i;
-                                    break;
+                                    //console.log(subsModel.get(i).index + " - " + currentSubtitle["index"]);
+                                    if (subsModel.get(i).index === currentSubtitle["index"].toString())
+                                    {
+                                        subsCombo.currentIndex = i;
+                                        break;
+                                    }
                                 }
-                            }
 
+                            }
                         }
                     }
 
