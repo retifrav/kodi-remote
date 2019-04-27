@@ -72,7 +72,8 @@ Window {
         sequence: "Ctrl+Right"
         onActivated: {
             request(
-                prepateRequest("\"Player.Seek\",\"params\":{\"playerid\":1,\"value\":\"smallforward\"}"),
+                "POST",
+                "\"Player.Seek\",\"params\":{\"playerid\":1,\"value\":\"smallforward\"}",
                 function (o) { processResults(o); }
             );
         }
@@ -81,7 +82,8 @@ Window {
         sequence: "Ctrl+Left"
         onActivated: {
             request(
-                prepateRequest("\"Player.Seek\",\"params\":{\"playerid\":1,\"value\":\"smallbackward\"}"),
+                "POST",
+                "\"Player.Seek\",\"params\":{\"playerid\":1,\"value\":\"smallbackward\"}",
                 function (o) { processResults(o); }
             );
         }
@@ -91,7 +93,8 @@ Window {
         onActivated: {
             // get the list of subtitles
             request(
-                prepateRequest("\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"subtitleenabled\",\"currentsubtitle\",\"subtitles\"]}"),
+                "GET",
+                "\"Player.GetProperties\",\"params\":{\"playerid\":1,\"properties\":[\"subtitleenabled\",\"currentsubtitle\",\"subtitles\"]}",
                 function (o)
                 {
                     var rez = processResults(o)["result"];
@@ -160,7 +163,8 @@ Window {
             source: "qrc:/img/stop.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Player.Stop\",\"params\":{\"playerid\":1}"),
+                    "POST",
+                    "\"Player.Stop\",\"params\":{\"playerid\":1}",
                     function (o) { processResults(o); }
                 );
             }
@@ -172,7 +176,8 @@ Window {
             source: "qrc:/img/up.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Up\""),
+                    "POST",
+                    "\"Input.Up\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -184,7 +189,8 @@ Window {
             source: "qrc:/img/back.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Back\""),
+                    "POST",
+                    "\"Input.Back\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -196,7 +202,8 @@ Window {
             source: "qrc:/img/left.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Left\""),
+                    "POST",
+                    "\"Input.Left\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -208,7 +215,8 @@ Window {
             source: "qrc:/img/down.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Down\""),
+                    "POST",
+                    "\"Input.Down\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -220,7 +228,8 @@ Window {
             source: "qrc:/img/right.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Right\""),
+                    "POST",
+                    "\"Input.Right\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -232,7 +241,8 @@ Window {
             source: "qrc:/img/space.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Player.PlayPause\",\"params\":{\"playerid\":1}"),
+                    "POST",
+                    "\"Player.PlayPause\",\"params\":{\"playerid\":1}",
                     function (o) { processResults(o); }
                 );
             }
@@ -245,7 +255,8 @@ Window {
             source: "qrc:/img/enter.svg"
             onClicked: {
                 request(
-                    prepateRequest("\"Input.Select\""),
+                    "POST",
+                    "\"Input.Select\"",
                     function (o) { processResults(o); }
                 );
             }
@@ -259,7 +270,8 @@ Window {
                 source: "qrc:/img/menu.svg"
                 onClicked: {
                     request(
-                        prepateRequest("\"Input.ContextMenu\""),
+                        "POST",
+                        "\"Input.ContextMenu\"",
                         function (o) { processResults(o); }
                     );
                 }
@@ -347,7 +359,8 @@ Window {
 
                     }
                     request(
-                        prepateRequest("\"Player.SetSubtitle\",\"params\":" + params),
+                        "POST",
+                        "\"Player.SetSubtitle\",\"params\":".concat(params),
                         function (o) { processResults(o); }
                     );
                     subsDialog.close();
@@ -362,28 +375,39 @@ Window {
         textMain: "Some error"
     }
 
-    function request(url, callback)
+    function request(method, params, callback)
     {
-        //console.log(decodeURIComponent(url));
+        //console.log(playerURL);
+        //console.log(params);
+
+        if (method !== "GET" && method !== "POST")
+        {
+            let errorText = "Unknown HTTP method: ".concat(method);
+            console.log(errorText);
+            dialogError.textMain = errorText;
+            dialogError.show();
+            return;
+        }
+
+        params = methodTemplate.replace("-=PLACEHOLDER=-", params);
+        if (method === "GET")
+        {
+            params = "?request=".concat(encodeURIComponent(params));
+        }
+
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = (function(myxhr) {
             return function() {
                 if(myxhr.readyState === 4) { callback(myxhr); }
             }
         })(xhr);
-        xhr.open("GET", url);
+
+        xhr.open(method, method === "GET" ? playerURL.concat(params) : playerURL);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Authorization", "Basic " + Qt.btoa(user + ":" + password));
-        xhr.send();
-    }
 
-    function prepateRequest(actionName)
-    {
-        return playerURL
-                + "?request="
-                + encodeURIComponent(
-                    methodTemplate.replace("-=PLACEHOLDER=-", actionName)
-                    );
+        if (method === "GET") { xhr.send(); }
+        else { xhr.send(params); }
     }
 
     function processResults(o)
