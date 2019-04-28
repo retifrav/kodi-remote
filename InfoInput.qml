@@ -1,13 +1,14 @@
-import QtQuick 2.11
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.11
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 // a background for it, so the field clearly stands out
 Rectangle {
     // take all the width avaulable
     Layout.fillWidth: true
     // leave anough room for symbols in the line
-    Layout.preferredHeight: ti.contentHeight * 1.5
+    Layout.preferredHeight: ti.contentHeight * 1.6
+    color: root.colorAccent
 
     // expose the text property
     property alias text: ti.text

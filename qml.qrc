@@ -14,5 +14,6 @@
         <file>InfoText.qml</file>
         <file>InfoInput.qml</file>
         <file>MessageBox.qml</file>
+        <file>img/shutdown.svg</file>
     </qresource>
 </RCC>

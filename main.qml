@@ -1,7 +1,7 @@
-import QtQuick 2.11
-import QtQuick.Window 2.11
-import QtQuick.Controls 2.4
-import QtQuick.Layouts 1.11
+import QtQuick 2.12
+import QtQuick.Window 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 import Qt.labs.settings 1.0
 
 Window {
@@ -9,12 +9,14 @@ Window {
     visible: true
     width: 900
     minimumWidth: 600
-    height: 600
-    minimumHeight: 550
+    height: 700
+    minimumHeight: 600
     title: qsTr("Kodi remote")
     color: "#121212"
 
-    property string playerURL: "http://" + ti_iPort.text + "/jsonrpc"
+    property string colorAccent: "#12B1E6"
+
+    property string playerURL: "http://".concat(ti_iPort.text.trim(), "/jsonrpc");
     property string methodTemplate: "{\"jsonrpc\":\"2.0\",\"method\":-=PLACEHOLDER=-,\"id\":1}"
     property string user: ti_user.text
     property string password: ti_password.text
@@ -32,6 +34,10 @@ Window {
         property alias password: ti_password.text // password
     }
 
+    Shortcut {
+        sequence: "Return"
+        onActivated: btn_enter.clicked()
+    }
     Shortcut {
         sequence: "Up"
         onActivated: btn_up.clicked()
@@ -55,14 +61,6 @@ Window {
     Shortcut {
         sequences: [StandardKey.Cancel, "Backspace"]
         onActivated: btn_back.clicked()
-    }
-    Shortcut {
-        sequence: "Return"
-        onActivated: btn_enter.clicked()
-    }
-    Shortcut {
-        sequence: "Ctrl+I"
-        onActivated: btn_menu.clicked()
     }
     Shortcut {
         sequence: "Ctrl+X"
@@ -114,7 +112,7 @@ Window {
                             var lang = subtitles[s]["language"];
                             subsModel.append({
                                 "index": subtitles[s]["index"].toString(),
-                                "lang": "[" + (lang.length > 0 ? lang : "unknown") + "] " + subtitles[s]["name"]
+                                "lang": "[".concat((lang.length > 0 ? lang : "unknown"), "] ", subtitles[s]["name"])
                             });
                             //console.log(subtitles[s]["index"] + ", " + subtitles[s]["language"] + ", " + subtitles[s]["name"]);
                         }
@@ -145,6 +143,16 @@ Window {
                     subsDialog.open();
                 }
             );
+        }
+    }
+    Shortcut {
+        sequence: "Ctrl+I"
+        onActivated: btn_menu.clicked()
+    }
+    Shortcut {
+        sequence: "Ctrl+E"
+        onActivated: {
+            dialogShutdown.open();
         }
     }
 
@@ -276,16 +284,31 @@ Window {
                     );
                 }
             }
+
+            /*
+            ControlButton {
+                id: btn_shutdown
+                source: "qrc:/img/shutdown.svg"
+                onClicked: {
+                    request(
+                        "POST",
+                        "\"System.Shutdown\"",
+                        function (o) { processResults(o); }
+                    );
+                }
+            }
+            */
         }
         Rectangle {
             Layout.rowSpan: 3
             Layout.column: 4
-            Layout.preferredWidth: parent.width * 0.25
+            Layout.preferredWidth: parent.width * 0.3
+            Layout.maximumWidth: 300
             Layout.fillHeight: true
 
             color: "#094354"
             border.width: 3
-            border.color: "#12B1E6"
+            border.color: root.colorAccent
 
             visible: root.width < 800 || root.height < 400 ? false : true
 
@@ -297,8 +320,9 @@ Window {
                 InfoText { text: "<h3>⌘ + ←</h3><i>30 seconds backward</i>" }
                 InfoText { text: "<h3>⌘ + →</h3><i>30 seconds forward</i>" }
                 InfoText { text: "<h3>⌘ + X</h3><i>stop playing</i>" }
-                InfoText { text: "<h3>⌘ + I</h3><i>context menu</i>" }
                 InfoText { text: "<h3>⌘ + S</h3><i>subtitles</i>" }
+                InfoText { text: "<h3>⌘ + I</h3><i>context menu</i>" }
+                InfoText { text: "<h3>⌘ + E</h3><i>shutdown</i>" }
 
                 Item {
                     Layout.fillWidth: true
@@ -306,25 +330,28 @@ Window {
                 }
 
                 ColumnLayout {
+                    Layout.fillWidth: true
                     InfoText { text: "IP and port" }
                     InfoInput {
                         id: ti_iPort
                         placeholder: "192.168.1.5:8080"
                     }
                 }
-                ColumnLayout {
-                    InfoText { text: "User" }
-                    InfoInput {
-                        id: ti_user
-                        placeholder: "osmc"
+                RowLayout {
+                    ColumnLayout {
+                        InfoText { text: "User" }
+                        InfoInput {
+                            id: ti_user
+                            placeholder: "kodi"
+                        }
                     }
-                }
-                ColumnLayout {
-                    InfoText { text: "Password" }
-                    InfoInput {
-                        id: ti_password
-                        placeholder: "osmc"
-                        echoMode: TextInput.Password
+                    ColumnLayout {
+                        InfoText { text: "Password" }
+                        InfoInput {
+                            id: ti_password
+                            placeholder: "kodi"
+                            echoMode: TextInput.Password
+                        }
                     }
                 }
             }
@@ -350,9 +377,10 @@ Window {
                 model: ListModel { id: subsModel }
                 onActivated: {
                     //console.log(subsModel.get(currentIndex).index);
-                    var params = "{\"playerid\":1,\"subtitle\":"
-                        + subsModel.get(currentIndex).index
-                        + ", \"enable\":true}";
+                    var params =
+                            "{\"playerid\":1,\"subtitle\":".concat(
+                                subsModel.get(currentIndex).index, ", \"enable\":true}"
+                                );
                     if (subsModel.get(currentIndex).index === "-1")
                     {
                         params = "{\"playerid\":1,\"subtitle\":\"off\"}";
@@ -375,6 +403,30 @@ Window {
         textMain: "Some error"
     }
 
+    Item {
+        anchors.centerIn: parent
+
+        Dialog {
+            id: dialogShutdown
+            anchors.centerIn: parent
+            modal: true
+            title: "Shutdown"
+            standardButtons: Dialog.Yes | Dialog.No
+
+            Label {
+                text: "Are you sure you want to turn off the player?"
+            }
+
+            onAccepted: {
+                request(
+                    "POST",
+                    "\"System.Shutdown\"",
+                    function (o) { processResults(o); }
+                    );
+            }
+        }
+    }
+
     function request(method, params, callback)
     {
         //console.log(playerURL);
@@ -395,41 +447,63 @@ Window {
             params = "?request=".concat(encodeURIComponent(params));
         }
 
-        var xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         xhr.onreadystatechange = (function(myxhr) {
             return function() {
-                if(myxhr.readyState === 4) { callback(myxhr); }
+                switch (xhr.readyState)
+                {
+                case 0: // doesn't work yet: https://bugreports.qt.io/browse/QTBUG-75488
+                    dialogError.textMain = "Looks like a timeout. Check if your player is online";
+                    dialogError.show();
+                    break;
+                case 4:
+                    callback(myxhr);
+                    break;
+                }
             }
         })(xhr);
 
         xhr.open(method, method === "GET" ? playerURL.concat(params) : playerURL);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("Authorization", "Basic " + Qt.btoa(user + ":" + password));
+        xhr.setRequestHeader("Authorization", "Basic ".concat(Qt.btoa("".concat(user, ":", password))));
+
+        let xhrTimer = Qt.createQmlObject("import QtQuick 2.12; Timer {interval:3000;}", root, "XHRtimer");
+        xhrTimer.triggered.connect(function() {
+            if (xhr.readyState !== 4)
+            {
+                console.log("Request timeout");
+                xhr.abort();
+            }
+        });
+        xhrTimer.start();
 
         if (method === "GET") { xhr.send(); }
         else { xhr.send(params); }
     }
 
-    function processResults(o)
+    function processResults(xhr)
     {
-        if (o.status === 200)
+        if (xhr.status === 200)
         {
-            var jsn = JSON.parse(o.responseText);
+            var jsn = JSON.parse(xhr.responseText);
             // if there was no error, return JSON result
             if (!jsn.hasOwnProperty("error")) { return jsn; }
             else // set message text and show the dialog window
             {
-                dialogError.textMain = "Some error has occurred<br/>Code: "
-                    + jsn["error"]["code"] + "<br/>Error: "
-                    + jsn["error"]["message"];
+                dialogError.textMain =
+                        "Some error has occurred<br/>Code: ".concat(
+                            jsn["error"]["code"], "<br/>Error: ", jsn["error"]["message"]
+                            );
                 //console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
                 dialogError.show();
             }
         }
         else
         {
-            dialogError.textMain = "Some error has occurred<br/>Code: "
-                + o.status + "<br/>Status: " + o.statusText;
+            dialogError.textMain =
+                    "Some error has occurred<br/>Code: ".concat(
+                        xhr.status, "<br/>Status: ", xhr.statusText
+                        );
             console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
             dialogError.show();
         }
