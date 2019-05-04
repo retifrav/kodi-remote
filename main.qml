@@ -21,6 +21,8 @@ Window {
     property string user: ti_user.text
     property string password: ti_password.text
 
+    property bool wasTimeout: false
+
     Settings {
         id: settings
 
@@ -452,9 +454,10 @@ Window {
             return function() {
                 switch (xhr.readyState)
                 {
-                case 0: // doesn't work yet: https://bugreports.qt.io/browse/QTBUG-75488
-                    dialogError.textMain = "Looks like a timeout. Check if your player is online";
-                    dialogError.show();
+                case 0:
+                    // won't work: https://bugreports.qt.io/browse/QTBUG-75488
+                    //dialogError.textMain = "Looks like a timeout. Check if your player is online";
+                    //dialogError.show();
                     break;
                 case 4:
                     callback(myxhr);
@@ -471,7 +474,8 @@ Window {
         xhrTimer.triggered.connect(function() {
             if (xhr.readyState !== 4)
             {
-                console.log("Request timeout");
+                wasTimeout = true;
+                //console.log("Request timeout");
                 xhr.abort();
             }
         });
@@ -500,12 +504,21 @@ Window {
         }
         else
         {
-            dialogError.textMain =
-                    "Some error has occurred<br/>Code: ".concat(
-                        xhr.status, "<br/>Status: ", xhr.statusText
-                        );
-            console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
-            dialogError.show();
+            if (wasTimeout === false)
+            {
+                dialogError.textMain =
+                        "Some error has occurred<br/>Code: ".concat(
+                            xhr.status, "<br/>Status: ", xhr.statusText
+                            );
+                console.log(dialogError.textMain.replace(/<br\/>/g, " | "));
+                dialogError.show();
+            }
+            else
+            {
+                wasTimeout = false;
+                dialogError.textMain = "Looks like a timeout. Check if your player is online";
+                dialogError.show();
+            }
         }
     }
 }
