@@ -8,4 +8,4 @@ Created with Qt for Mac OS, but it should work on different platforms too. Altho
 
 Current Qt version: ~5.11.1~ 5.12.3.
 
-More information in the following [article](https://retifrav.github.io/blog/2018/09/02/kodi-remote-control-app/).
+More information in the following [article](https://retifrav.github.io/blog/2018/09/01/kodi-remote-control-app/).
